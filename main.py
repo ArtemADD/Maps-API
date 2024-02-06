@@ -1,6 +1,7 @@
 import sys
 import pygame as pg
 import requests
+import math
 
 
 class Map:
@@ -33,16 +34,16 @@ class Map:
                         self.z += 1
                         self.requests()
                     if event.key == pg.K_LEFT:
-                        self.x -= 1
+                        self.x -= 0.026 * math.pow(2, 15 - self.z)
                         self.requests()
                     if event.key == pg.K_RIGHT:
-                        self.x += 1
+                        self.x += 0.026 * math.pow(2, 15 - self.z)
                         self.requests()
-                    if event.key == pg.K_UP:
-                        self.y += 1
+                    if event.key == pg.K_UP and self.y < 85:
+                        self.y += 0.0135 * math.pow(2, 15 - self.z)
                         self.requests()
-                    if event.key == pg.K_DOWN:
-                        self.y -= 1
+                    if event.key == pg.K_DOWN and self.y > -85:
+                        self.y -= 0.0135 * math.pow(2, 15 - self.z)
                         self.requests()
             self.draw()
             self.clock.tick(self.fps)
