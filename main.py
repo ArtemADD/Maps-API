@@ -32,6 +32,18 @@ class Map:
                     if event.key == pg.K_PAGEUP and self.z < 22:
                         self.z += 1
                         self.requests()
+                    if event.key == pg.K_LEFT:
+                        self.x -= 1
+                        self.requests()
+                    if event.key == pg.K_RIGHT:
+                        self.x += 1
+                        self.requests()
+                    if event.key == pg.K_UP:
+                        self.y += 1
+                        self.requests()
+                    if event.key == pg.K_DOWN:
+                        self.y -= 1
+                        self.requests()
             self.draw()
             self.clock.tick(self.fps)
             self.display.flip()
@@ -57,4 +69,3 @@ class Map:
 if __name__ == '__main__':
     game = Map()
     sys.exit()
-    
