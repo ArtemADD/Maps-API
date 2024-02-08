@@ -14,6 +14,7 @@ class Map:
 
         self.fps = 100
         self.x, self.y = 50, 50
+        self.format = 'map'
         self.z = 5
         self.x1, self.y1 = None, None
         self.base_font = pg.font.Font(None, 32)
@@ -23,6 +24,21 @@ class Map:
         self.color_active = pg.Color('#75c1ff')
         self.color_passive = pg.Color('#b3b3b3')
         self.color = self.color_passive
+
+        self.ob = pg.font.Font(None, 32)
+        self.ob_text = 'Схема'
+
+        self.ob_rect = pg.Rect(220, 475, 80, 32)
+
+        self.ob2 = pg.font.Font(None, 32)
+        self.ob2_text = 'Спутник'
+
+        self.ob2_rect = pg.Rect(310, 475, 100, 32)
+
+        self.ob3 = pg.font.Font(None, 32)
+        self.ob3_text = 'Гибрид'
+
+        self.ob3_rect = pg.Rect(420, 475, 100, 32)
 
         self.active = False
         self.clock = pg.time.Clock()
@@ -35,6 +51,18 @@ class Map:
             if self.input_rect.collidepoint(event.pos):
                 self.user_text = ''
                 self.active = True
+            if self.ob_rect.collidepoint(event.pos):
+                self.format = 'map'
+                print(self.search_params)
+                self.requests()
+            if self.ob2_rect.collidepoint(event.pos):
+                self.format = 'sat'
+                print(self.search_params)
+                self.requests()
+            if self.ob3_rect.collidepoint(event.pos):
+                self.format = 'sat,skl'
+                print(self.search_params)
+                self.requests()
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_RETURN:
@@ -43,7 +71,7 @@ class Map:
                             "GeoObject"][
                             "Point"]["pos"]).split(' ')
                 print(t)
-                self.x, self.y = t
+                self.x, self.y = [float(i) for i in t]
                 self.x1, self.y1 = t
                 self.requests()
                 self.active = False
@@ -91,22 +119,30 @@ class Map:
         else:
             self.color = self.color_passive
         pg.draw.rect(self.screen, self.color, self.input_rect)
-
+        pg.draw.rect(self.screen, self.color_passive, self.ob_rect)
+        pg.draw.rect(self.screen, self.color_passive, self.ob2_rect)
+        pg.draw.rect(self.screen, self.color_passive, self.ob3_rect)
         text_surface = self.base_font.render(self.user_text, True, (255, 255, 255))
+        text_surface1 = self.base_font.render(self.ob_text, True, (255, 255, 255))
+        text_surface2 = self.base_font.render(self.ob2_text, True, (255, 255, 255))
+        text_surface3 = self.base_font.render(self.ob3_text, True, (255, 255, 255))
         self.screen.blit(text_surface, (self.input_rect.x + 5, self.input_rect.y + 5))
+        self.screen.blit(text_surface1, (self.ob_rect.x + 5, self.ob_rect.y + 5))
+        self.screen.blit(text_surface2, (self.ob2_rect.x + 5, self.ob2_rect.y + 5))
+        self.screen.blit(text_surface3, (self.ob3_rect.x + 5, self.ob3_rect.y + 5))
         self.input_rect.w = max(100, text_surface.get_width() + 10)
 
 
     def requests(self):
         map_request = f"http://static-maps.yandex.ru/1.x/"
-        search_params = {
+        self.search_params = {
             "ll": f'{self.x},{self.y}',
             "z": str(self.z),
-            "l": 'map'
+            "l": self.format
         }
         if self.x1 != None:
-            search_params["pt"] = "{0},pm2dgl".format(f'{self.x1},{self.y1}')
-        response = requests.get(map_request, search_params)
+            self.search_params["pt"] = "{0},pm2dgl".format(f'{self.x1},{self.y1}')
+        response = requests.get(map_request, self.search_params)
         if not response:
             print("Ошибка выполнения запроса:")
             print(map_request)
@@ -117,6 +153,8 @@ class Map:
         map_file = "map.png"
         with open(map_file, "wb") as file:
             file.write(response.content)
+
+
 
 
 if __name__ == '__main__':
