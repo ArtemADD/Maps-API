@@ -8,7 +8,7 @@ class Map:
     def __init__(self):
         pg.init()
         pg.display.set_caption('Map')
-        self.size = self.width, self.height = 600, 550
+        self.size = self.width, self.height = 600, 600
         self.screen = pg.display.set_mode(self.size)
         self.display = pg.display
 
@@ -40,6 +40,11 @@ class Map:
 
         self.ob3_rect = pg.Rect(420, 475, 100, 32)
 
+        self.ob4 = pg.font.Font(None, 32)
+        self.ob4_text = 'Сброс поискового результата'
+
+        self.ob4_rect = pg.Rect(50, 520, 140, 32)
+
         self.active = False
         self.clock = pg.time.Clock()
         self.requests()
@@ -62,6 +67,11 @@ class Map:
             if self.ob3_rect.collidepoint(event.pos):
                 self.format = 'sat,skl'
                 print(self.search_params)
+                self.requests()
+            if self.ob4_rect.collidepoint(event.pos):
+                del self.search_params['pt']
+                self.user_text = ''
+                self.x1, self.y1 = None, None
                 self.requests()
 
         if event.type == pg.KEYDOWN:
@@ -122,15 +132,19 @@ class Map:
         pg.draw.rect(self.screen, self.color_passive, self.ob_rect)
         pg.draw.rect(self.screen, self.color_passive, self.ob2_rect)
         pg.draw.rect(self.screen, self.color_passive, self.ob3_rect)
+        pg.draw.rect(self.screen, self.color_passive, self.ob4_rect)
         text_surface = self.base_font.render(self.user_text, True, (255, 255, 255))
         text_surface1 = self.base_font.render(self.ob_text, True, (255, 255, 255))
         text_surface2 = self.base_font.render(self.ob2_text, True, (255, 255, 255))
         text_surface3 = self.base_font.render(self.ob3_text, True, (255, 255, 255))
+        text_surface4 = self.base_font.render(self.ob4_text, True, (255, 255, 255))
         self.screen.blit(text_surface, (self.input_rect.x + 5, self.input_rect.y + 5))
         self.screen.blit(text_surface1, (self.ob_rect.x + 5, self.ob_rect.y + 5))
         self.screen.blit(text_surface2, (self.ob2_rect.x + 5, self.ob2_rect.y + 5))
         self.screen.blit(text_surface3, (self.ob3_rect.x + 5, self.ob3_rect.y + 5))
+        self.screen.blit(text_surface4, (self.ob4_rect.x + 5, self.ob4_rect.y + 5))
         self.input_rect.w = max(100, text_surface.get_width() + 10)
+        self.ob4_rect.w = max(100, text_surface4.get_width() + 10)
 
 
     def requests(self):
@@ -160,3 +174,4 @@ class Map:
 if __name__ == '__main__':
     game = Map()
     sys.exit()
+
