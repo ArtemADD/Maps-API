@@ -25,6 +25,11 @@ class Map:
         self.color_passive = pg.Color('#b3b3b3')
         self.color = self.color_passive
 
+        self.output_font = pg.font.Font(None, 24)
+
+        self.output_rect = pg.Rect(50, 565, 140, 24)
+        self.output_text = 'Полный адрес:'
+
         self.ob = pg.font.Font(None, 32)
         self.ob_text = 'Схема'
 
@@ -71,20 +76,29 @@ class Map:
             if self.ob4_rect.collidepoint(event.pos):
                 del self.search_params['pt']
                 self.user_text = ''
+                self.output_text = 'Полный адрес:'
+                self.output_font = pg.font.Font(None, 24)
                 self.x1, self.y1 = None, None
                 self.requests()
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_RETURN:
-                geocoder_request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode={self.user_text}&format=json"
-                t = str(requests.get(geocoder_request).json()["response"]["GeoObjectCollection"]["featureMember"][0][
-                            "GeoObject"][
-                            "Point"]["pos"]).split(' ')
-                print(t)
-                self.x, self.y = [float(i) for i in t]
-                self.x1, self.y1 = t
-                self.requests()
-                self.active = False
+                geocoder_request = (f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b"
+                                    f"&geocode={self.user_text}&format=json")
+                geocoder_response = requests.get(geocoder_request)
+                if not geocoder_response:
+                    pass
+                else:
+                    r = geocoder_response.json()
+                    t = str(r["response"]["GeoObjectCollection"]["featureMember"][0][
+                                "GeoObject"][
+                                "Point"]["pos"]).split(' ')
+                    self.x, self.y = [float(i) for i in t]
+                    self.x1, self.y1 = t
+                    self.requests()
+                    self.output_text = (r['response']["GeoObjectCollection"]["featureMember"][0]['GeoObject']
+                                        ['metaDataProperty']['GeocoderMetaData']['text'])
+                    self.active = False
             if self.active:
                 if event.key == pg.K_BACKSPACE:
                     self.user_text = self.user_text[:-1]
@@ -106,15 +120,23 @@ class Map:
                         self.requests()
                     if event.key == pg.K_LEFT:
                         self.x -= 0.026 * math.pow(2, 15 - self.z)
+                        while self.x < -180:
+                            self.x += 360
                         self.requests()
                     if event.key == pg.K_RIGHT:
                         self.x += 0.026 * math.pow(2, 15 - self.z)
+                        while self.x > 180:
+                            self.x -= 360
                         self.requests()
-                    if event.key == pg.K_UP and self.y < 85:
+                    if event.key == pg.K_UP:
                         self.y += 0.0135 * math.pow(2, 15 - self.z)
+                        if self.y > 85:
+                            self.y = 85
                         self.requests()
                     if event.key == pg.K_DOWN and self.y > -85:
                         self.y -= 0.0135 * math.pow(2, 15 - self.z)
+                        if self.y < -85:
+                            self.y = -85
                         self.requests()
                 self.writ(event)
             self.draw()
@@ -133,19 +155,25 @@ class Map:
         pg.draw.rect(self.screen, self.color_passive, self.ob2_rect)
         pg.draw.rect(self.screen, self.color_passive, self.ob3_rect)
         pg.draw.rect(self.screen, self.color_passive, self.ob4_rect)
+        pg.draw.rect(self.screen, self.color_passive, self.output_rect)
         text_surface = self.base_font.render(self.user_text, True, (255, 255, 255))
         text_surface1 = self.base_font.render(self.ob_text, True, (255, 255, 255))
         text_surface2 = self.base_font.render(self.ob2_text, True, (255, 255, 255))
         text_surface3 = self.base_font.render(self.ob3_text, True, (255, 255, 255))
         text_surface4 = self.base_font.render(self.ob4_text, True, (255, 255, 255))
+        text_surface5 = self.output_font.render(self.output_text, True, (255, 255, 255))
         self.screen.blit(text_surface, (self.input_rect.x + 5, self.input_rect.y + 5))
         self.screen.blit(text_surface1, (self.ob_rect.x + 5, self.ob_rect.y + 5))
         self.screen.blit(text_surface2, (self.ob2_rect.x + 5, self.ob2_rect.y + 5))
         self.screen.blit(text_surface3, (self.ob3_rect.x + 5, self.ob3_rect.y + 5))
         self.screen.blit(text_surface4, (self.ob4_rect.x + 5, self.ob4_rect.y + 5))
+        self.screen.blit(text_surface5, (self.output_rect.x + 5, self.output_rect.y + 5))
         self.input_rect.w = max(100, text_surface.get_width() + 10)
         self.ob4_rect.w = max(100, text_surface4.get_width() + 10)
-
+        while text_surface5.get_width() > self.width:
+            self.output_font = pg.font.Font(None, self.output_font.get_height() - 1)
+            text_surface5 = self.output_font.render(self.output_text, True, (255, 255, 255))
+        self.output_rect.w = max(100, text_surface5.get_width() + 10)
 
     def requests(self):
         map_request = f"http://static-maps.yandex.ru/1.x/"
@@ -154,7 +182,7 @@ class Map:
             "z": str(self.z),
             "l": self.format
         }
-        if self.x1 != None:
+        if self.x1 is not None:
             self.search_params["pt"] = "{0},pm2dgl".format(f'{self.x1},{self.y1}')
         response = requests.get(map_request, self.search_params)
         if not response:
@@ -167,8 +195,6 @@ class Map:
         map_file = "map.png"
         with open(map_file, "wb") as file:
             file.write(response.content)
-
-
 
 
 if __name__ == '__main__':
